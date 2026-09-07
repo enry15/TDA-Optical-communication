@@ -1,0 +1,24 @@
+# Mathematica
+*.nb.bak
+*.nb~
+Notebook$*
+*.CellTags
+*.dat.gz
+*.mx
+*.exe
+.MathematicaEnvironment
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+*.swp
+*~
+.vscode/
+.idea/
+
+# Large outputs (uncomment if needed)
+# *.png
+# *.pdf
