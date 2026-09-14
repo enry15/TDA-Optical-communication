@@ -25,14 +25,14 @@ ClearAll["Global`*"];
 
 
 (* --- 1. Parameters ------------------------------------------------------ *)
-targetL = 20;            (* signal length shown in both figures             *)
+targetM = 20;            (* signal length shown in both figures             *)
 numTrials = 1000;        (* Monte Carlo trials per noise level              *)
 
 sigmaVal = 0.8;          (* standard deviation of each Gaussian pulse       *)
 stepRes = 0.1;           (* sampling resolution, in spatial units           *)
 dist = 5;                (* distance d between two consecutive peaks        *)
 minWidthSamples = 8;     (* W_min = 0.8 units = 8 samples at step 0.1       *)
-amplitudeThreshold = 0.5;(* half-maximum level (HML)                        *)
+amplitudeThreshold = 0.5;(* full width half maximum level (FWHM)            *)
 
 valNoise = {0.51, 0.55, 0.60};   (* noise levels of the three panels        *)
 exampleNoise = 0.60;             (* noise level of the example signal       *)
@@ -40,11 +40,11 @@ exampleNoise = 0.60;             (* noise level of the example signal       *)
 
 (* --- 2. Signal generation and topological filter ------------------------ *)
 
-GenerateCleanSignal[L_, maxSpace_] :=
+GenerateCleanSignal[M_, maxSpace_] :=
   Quiet[
    Module[{xArray, peakPositions},
     xArray = Range[0, maxSpace, stepRes];
-    peakPositions = Range[dist, L*dist, dist];
+    peakPositions = Range[dist, M*dist, dist];
     Total[Table[Exp[-((xArray - pos)^2)/(2*sigmaVal^2)], {pos, peakPositions}]]],
    General::munfl];
 
@@ -56,24 +56,24 @@ CountValidPulses[noisySignal_] :=
    l : {1 ..} /; Length[l] >= minWidthSamples];
 
 (* One full Monte Carlo run: returns the list of estimated counts. *)
-RunTrials[L_, noise_] :=
+RunTrials[M_, noise_] :=
  Module[{maxSpace, numPts, clean},
-  maxSpace = L*dist + 5;
+  maxSpace = M*dist + 5;
   numPts = Round[maxSpace/stepRes] + 1;
-  clean = GenerateCleanSignal[L, maxSpace];
+  clean = GenerateCleanSignal[M, maxSpace];
   Table[CountValidPulses[clean + GenerateNoise[noise, maxSpace, numPts]],
    {numTrials}]];
 
 
 (* --- 3. Example of the physical data stream ----------------------------- *)
-Print["--- Example signal, L = ", targetL, ", s = ", exampleNoise, " ---"];
+Print["--- Example signal, M = ", targetM, ", s = ", exampleNoise, " ---"];
 
 examplePlot =
  Module[{maxSpace, numPts, xGrid, clean, noisy, count},
-  maxSpace = targetL*dist + 5;
+  maxSpace = targetM*dist + 5;
   numPts = Round[maxSpace/stepRes] + 1;
   xGrid = Range[0, maxSpace, stepRes];
-  clean = GenerateCleanSignal[targetL, maxSpace];
+  clean = GenerateCleanSignal[targetM, maxSpace];
   noisy = clean + GenerateNoise[exampleNoise, maxSpace, numPts];
   count = CountValidPulses[noisy];
   ListLinePlot[
@@ -83,10 +83,10 @@ examplePlot =
    GridLines -> {{}, {amplitudeThreshold}},
    GridLinesStyle -> Directive[Dashed, Black, AbsoluteThickness[1.5]],
    Frame -> True, FrameStyle -> Thick,
-   FrameLabel -> {"Space (units)", "Amplitude"},
+   FrameLabel -> {"t/T", "Amplitude"},
    PlotLabel ->
-    Style[StringForm["L = ``, s = `` (counted: ``)",
-      targetL, exampleNoise, count], Bold, 15],
+    Style[StringForm["M = ``, s = `` (counted: ``)",
+      targetM, exampleNoise, count], Bold, 15],
    ImageSize -> 850, AspectRatio -> 1/4]];
 
 Print[examplePlot];
@@ -95,30 +95,30 @@ Dashed line: threshold at 0.5."];
 
 
 (* --- 4. Outcome distributions at three noise levels --------------------- *)
-Print["\n--- Outcome distributions, L = ", targetL, " ---"];
+Print["\n--- Outcome distributions, M = ", targetL, " ---"];
 
 allData = Table[
    PrintTemporary["Computing s = ", noise, " ..."];
-   RunTrials[targetL, noise],
+   RunTrials[targetM, noise],
    {noise, valNoise}];
 
 (* Common vertical scale: the tallest bar of the three panels sets the height
    of all of them, so the plots can be compared directly. *)
 yMax = 1.05*Max[Map[Max[Counts[#]] &, allData]];
 
-xMin = targetL - 6;
-xMax = targetL + 6;
-ticksX = {targetL - 4, targetL - 2, targetL, targetL + 2, targetL + 4};
+xMin = targetM - 6;
+xMax = targetM + 6;
+ticksX = {targetM - 4, targetL - 2, targetL, targetL + 2, targetL + 4};
 
 histograms = Table[
    Histogram[allData[[i]], {1}, "Count",
     ChartStyle -> EdgeForm[Thin],
     PlotRange -> {{xMin, xMax}, {0, yMax}},
-    GridLines -> {{targetL}, {}},
+    GridLines -> {{targetM}, {}},
     GridLinesStyle -> Directive[Red, Thick, Dashed],
     Frame -> True,
     PlotLabel ->
-     Style[StringForm["L = ``, s = ``", targetL, valNoise[[i]]], 22, Bold],
+     Style[StringForm["M = ``, s = ``", targetM, valNoise[[i]]], 22, Bold],
     ImageSize -> 340,
     AspectRatio -> 0.85,
     (* The padding is the same on every panel, including the ones without
